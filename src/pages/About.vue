@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
-const downloadStatus = ref<'idle' | 'success' | 'error'>('idle');
+const downloadStatus = ref<'pending' | 'downloading' | 'success' | 'error'>('pending');
 
 // JSONデータ
 const jsonData = [
@@ -70,20 +70,23 @@ const convertToCSV = (data: any[]): string => {
 };
 
 // CSVファイルをダウンロードする関数
-const downloadCSV = () => {
+const downloadCSV = async () => {
   try {
+    downloadStatus.value = 'downloading';
     const csv = convertToCSV(jsonData);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'white_stripes_albums.csv');
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+    link.href = url;
+    link.setAttribute('download', 'white_stripes_albums.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // ダウンロード完了を模擬的に遅延
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     downloadStatus.value = 'success';
 
     // ダウンロード完了後、3秒後にリダイレクト
@@ -95,15 +98,20 @@ const downloadCSV = () => {
     downloadStatus.value = 'error';
   }
 };
+
+// コンポーネントがマウントされたときに自動的にダウンロードを開始
+onMounted(() => {
+  downloadCSV();
+});
 </script>
 
 <template>
-  <h1>About</h1>
   <div>
     <h2>The White Stripes Albums</h2>
-    <button @click="downloadCSV">Download CSV</button>
-    <p v-if="downloadStatus === 'success'">ダウンロードが完了しました。まもなくリダイレクトします。</p>
-    <p v-else-if="downloadStatus === 'error'">ダウンロードに失敗しました。再度お試しください。</p>
+    <p v-if="downloadStatus === 'pending'">ダウンロードを準備中...</p>
+    <p v-else-if="downloadStatus === 'downloading'">ダウンロード中...</p>
+    <p v-else-if="downloadStatus === 'success'">ダウンロードが完了しました。まもなくリダイレクトします。</p>
+    <p v-else-if="downloadStatus === 'error'">ダウンロードに失敗しました。ページを再読み込みしてください。</p>
   </div>
 </template>
 
