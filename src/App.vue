@@ -21,10 +21,17 @@ const currentView = computed(() => {
 </script>
 
 <template>
-  <a href="#/">Home</a> |
-  <a href="#/about">About</a> |
-  <a href="#/non-existent-path">Broken Link</a>
-  <component :is="currentView" />
+  <h1>Hello App!</h1>
+  <p>
+    <strong>Current route path:</strong> {{ $route.fullPath }}
+  </p>
+  <nav>
+    <RouterLink to="/">Go to Home</RouterLink>
+    <RouterLink to="/about">Go to About</RouterLink>
+  </nav>
+  <main>
+    <RouterView />
+  </main>
 </template>
 
 <style scoped>
